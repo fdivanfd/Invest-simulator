@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>長期資產配置與人生價值模擬系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+    }
+    .role-card.selected {
+      border-color: #3b82f6;
+      background-color: rgba(30, 58, 138, 0.35);
+      box-shadow: 0 0 0 2px #3b82f6;
+    }
+  </style>
+</head>
+<body class="p-3 sm:p-6 md:p-8">
+  <div class="max-w-5xl mx-auto space-y-6">
+    
+    <!-- 頂部標題 -->
+    <header class="text-center space-y-1">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">長期資產配置與人生價值模擬系統</h1>
+      <p class="text-xs sm:text-sm text-slate-400">宏觀市場週期、通脹實質購買力與生命週期動態博弈</p>
+    </header>
+
+    <!-- 頂部核心數值指標看板 -->
+    <section class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 sm:p-5 shadow-xl backdrop-blur">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-3 mb-4 gap-2">
+        <div class="flex items-center gap-2">
+          <h2 class="text-xs sm:text-sm font-semibold tracking-wider text-slate-300 uppercase">當前狀態與人生指標</h2>
+          <span id="badgeActiveRole" class="text-[11px] font-bold text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded">尚未選擇角色</span>
+        </div>
+        <span id="headerRoundInfo" class="text-xs font-medium text-blue-400 bg-blue-950/60 px-3 py-1 rounded-full border border-blue-800/50">準備就緒</span>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 sm:gap-3">
+        <!-- 總資產 -->
+        <div class="bg-slate-950/60 border border-slate-800 p-2.5 rounded-lg flex flex-col justify-between">
+          <span class="text-[11px] text-slate-400">當前總資產 (HK$)</span>
+          <span id="metricCapital" class="text-base font-bold text-white mt-1">HK$ 1,000,000</span>
+        </div>
+
+        <!-- VOO 股價 -->
+        <div class="bg-slate-950/60 border border-blue-900/40 p-2.5 rounded-lg flex flex-col justify-between">
+          <span class="text-[11px] text-blue-400">VOO 當前股價</span>
+          <span id="metricVooPrice" class="text-base font-bold text-blue-300 mt-1">HK$ 5,500</span>
+        </div>
+
+        <!-- 持有 VOO 股數 -->
+        <div class="bg-slate-950/60 border border-blue-900/40 p-2.5 rounded-lg flex flex-col justify-between">
+          <span class="text-[11px] text-blue-400">持有 VOO 單位</span>
+          <span id="metricVooShares" class="text-base font-bold text-blue-300 mt-1">0.00 股</span>
+        </div>
+
+        <!-- 快樂值 -->
+        <div class="bg-slate-950/60 border border-amber-500/30 p-2.5 rounded-lg flex flex-col justify-between">
+          <span class="text-[11px] text-amber-400">累積快樂值</span>
+          <span id="metricHappiness" class="text-base font-extrabold text-amber-300 mt-1">0.0 點</span>
+        </div>
+
+        <!-- 總名義盈虧 -->
+        <div class="bg-slate-950/60 border border-slate-800 p-2.5 rounded-lg flex flex-col justify-between">
+          <span class="text-[11px] text-slate-400">名義總盈虧</span>
+          <span id="metricNominalPnL" class="text-xs sm:text-sm font-bold text-slate-300 mt-1">HK$ 0 (0.0%)</span>
+        </div>
+
+        <!-- 總實際盈虧 (扣通脹) -->
+        <div class="bg-slate-950/60 border border-slate-800 p-2.5 rounded-lg flex flex-col justify-between">
+          <span class="text-[11px] text-slate-400">實質總盈虧</span>
+          <span id="metricRealPnL" class="text-xs sm:text-sm font-bold text-slate-300 mt-1">HK$ 0 (0.0%)</span>
+        </div>
+
+        <!-- 50年滾動平均 -->
+        <div class="bg-slate-950/60 border border-slate-800 p-2.5 rounded-lg flex flex-col justify-between">
+          <span class="text-[11px] text-slate-400">近50年S&P平均</span>
+          <span id="metricRolling50" class="text-xs sm:text-sm font-bold text-emerald-400 mt-1">11.12%</span>
+        </div>
+
+        <!-- 當年通脹/債息 -->
+        <div class="bg-slate-950/60 border border-slate-800 p-2.5 rounded-lg flex flex-col justify-between">
+          <span class="text-[11px] text-slate-400">通脹 / 債息</span>
+          <div class="mt-1 flex items-baseline gap-1 text-xs font-medium text-slate-300">
+            <span id="metricYearCpi">-</span>
+            <span class="text-slate-600">/</span>
+            <span id="metricYearYield">-</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 互動主控區 -->
+    <section class="bg-slate-900/90 border border-slate-800 rounded-xl p-5 sm:p-6 shadow-xl">
+      <!-- 階段 1: 角色選擇與起始設定 -->
+      <div id="panelAgeSetup" class="space-y-5 py-2">
+        <div>
+          <h3 class="text-lg font-bold text-white mb-1">請選擇你的人生角色</h3>
+          <p class="text-xs text-slate-400">注意：選擇角色並啟動遊戲後，整個人生週期將無法更換角色，除非重新啟動遊戲。</p>
+        </div>
+
+        <!-- 三角色卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- 角色 1: 普通人 -->
+          <div id="cardRoleNormal" onclick="selectRole('normal')" class="role-card selected bg-slate-950/80 border border-slate-800 p-4 rounded-xl cursor-pointer hover:border-blue-500/70 transition flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-white text-base">1. 普通人</span>
+                <span class="text-[11px] text-blue-400 bg-blue-950 px-2 py-0.5 rounded border border-blue-800/50">連登仔</span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                毫無特別的人，扣除開支後，每年儲蓄 <strong>$72,000</strong>。
+              </p>
+            </div>
+            <div class="text-[11px] text-slate-400 space-y-1 bg-slate-900/60 p-2.5 rounded border border-slate-800/60">
+              <div>• 起始年齡: <strong class="text-white">28 歲</strong></div>
+              <div>• 起始本金: <strong class="text-white">HK$ 1,000,000</strong></div>
+              <div>• 投資回報: <strong class="text-emerald-400">按當年市場隨機表現</strong></div>
+                          </div>
+          </div>
+
+          <!-- 角色 2: 性病Sam -->
+          <div id="cardRoleSam" onclick="selectRole('sam')" class="role-card bg-slate-950/80 border border-slate-800 p-4 rounded-xl cursor-pointer hover:border-blue-500/70 transition flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-rose-400 text-base">2. 性病Sam</span>
+                <span class="text-[11px] text-rose-400 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-800/50">唔靠老母一事無成, 不過靠老母都係一事無成</span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                30歲，廢物保安，問老母借200萬投資，收入極低，每年儲蓄36000，但經常叫雞而得性病，每年有50%機率需要18000去醫性病。
+              </p>
+            </div>
+            <div class="text-[11px] text-slate-400 space-y-1 bg-slate-900/60 p-2.5 rounded border border-slate-800/60">
+              <div>• 起始年齡: <strong class="text-rose-400">強制 30 歲 (少2年青春)</strong></div>
+              <div>• 起始本金: <strong class="text-emerald-400">HK$ 2,000,000</strong></div>
+              <div>• 儲蓄薪資: <strong class="text-rose-400">HK$ 36,000 / 年</strong></div>
+              <div>• 剛性懲罰: <strong class="text-rose-400">50% 機率扣 18,000 醫性病</strong></div>
+            </div>
+          </div>
+
+          <!-- 角色 3: Zero3 -->
+          <div id="cardRoleZero3" onclick="selectRole('zero3')" class="role-card bg-slate-950/80 border border-slate-800 p-4 rounded-xl cursor-pointer hover:border-blue-500/70 transition flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-purple-400 text-base">3. Zero3</span>
+                <span class="text-[11px] text-purple-400 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-800/50">極致幼稚</span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                AA狗，跟老母一齊住300呎私樓，為此非常自豪，極度高壓儲蓄，興趣為每日花5小時記錄並截圖其他回員的留言，無朋友無消費，每年儲蓄86400，但毫無投資能力，所有投資回報減2.8%。
+              </p>
+            </div>
+            <div class="text-[11px] text-slate-400 space-y-1 bg-slate-900/60 p-2.5 rounded border border-slate-800/60">
+              <div>• 起始年齡: <strong class="text-white">28 歲</strong></div>
+              <div>• 儲蓄薪資: <strong class="text-emerald-400">HK$ 86,400 / 年 (+20%)</strong></div>
+              <div>• 投資懲罰: <strong class="text-rose-400">所有回報永久 -2.8%</strong></div>
+              
+            </div>
+          </div>
+        </div>
+
+        <button id="btnStart" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg transition shadow-lg shadow-blue-900/40">
+          以選定角色啟動人生模擬
+        </button>
+      </div>
+
+      <!-- 階段 2: 年度決策操作 -->
+      <div id="panelSimulate" class="space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-800 pb-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="currentYearDisplay" class="text-lg font-bold text-white">2027 年度人生與資產決策</h3>
+              <span id="roleIndicatorTag" class="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-950 border border-blue-800 text-blue-300">普通人</span>
+            </div>
+            <p id="currentAgeDisplay" class="text-xs text-slate-400 mt-0.5">當前年齡: 28 歲 | 模擬第 1 年</p>
+          </div>
+          <div class="flex items-center gap-4 text-right">
+            <div>
+              <span id="cashflowLabel" class="text-[11px] text-slate-400 block">當年工作薪資注入</span>
+              <span id="annualSalaryDisplay" class="text-xs font-bold text-emerald-400 font-mono">+HK$ 72,000</span>
+            </div>
+            <div>
+              <span class="text-[11px] text-slate-400 block">年初可用資本總額</span>
+              <div id="roundCapitalDisplay" class="text-base font-bold text-blue-400">HK$ 1,072,000</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 66歲起退休剛性開支提示橫幅 -->
+        <div id="retirementExpenseBanner" class="bg-rose-950/40 border border-rose-800/70 rounded-lg p-3 text-xs text-rose-200 hidden">
+          <strong>【退休剛性醫療與生活開支】</strong> 您已年滿 66 歲以上，系統今年已自動從本金優先扣除剛性年老開支 <strong id="bannerMandatoryAmt" class="text-rose-400 font-mono">HK$ 0</strong>（以 65 歲最後年薪之 40% 為基準，每年遞增 3%，不計入快樂值）。
+        </div>
+
+        <!-- 步驟 1: 年度生活消費與快樂值 -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 sm:p-5 space-y-3">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-1">
+            <h4 class="text-sm font-semibold text-amber-400">第一步：設定年度自願消費與體驗投入</h4>
+            <span id="rateCostNotice" class="text-xs text-slate-400 font-mono bg-slate-900 px-2.5 py-1 rounded border border-slate-800">
+              目前每投入 HK$ 30,000 換取 1 點快樂 (每年上限 5 點)
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+            <div class="sm:col-span-2">
+              <label for="inputSpend" class="block text-xs text-slate-400 mb-1">
+                今年自願消費金額 (HK$) — 可填 0，上限為當前可用資金
+              </label>
+              <input type="number" id="inputSpend" min="0" value="60000" step="5000" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="bg-slate-900/60 border border-slate-800/80 p-3 rounded-lg text-center">
+              <span class="text-xs text-slate-400 block">預計今年增加快樂</span>
+              <span id="labelAddHappiness" class="text-base font-bold text-amber-300 mt-0.5 block">+2.0 點</span>
+            </div>
+          </div>
+          <p id="spendError" class="text-xs text-rose-500 hidden">消費金額不可超過當前可用總資產，且不可為負數。</p>
+        </div>
+
+        <!-- 步驟 2: 剩餘資金三項資產配置 -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 sm:p-5 space-y-4">
+          <div class="flex justify-between items-center">
+            <h4 class="text-sm font-semibold text-blue-400">第二步：扣除消費後餘額之投資配置 (總和必為 100%)</h4>
+            <span class="text-xs text-slate-400">可投資總額: <strong id="investableCapitalDisplay" class="text-white">HK$ 1,012,000</strong></span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center text-xs font-semibold py-1">
+            <div class="p-2 rounded bg-blue-950/40 border border-blue-900/60">
+              <span class="text-blue-400 block">VOO 股票 ETF</span>
+              <span id="badgeStockPct" class="text-white text-sm font-bold">50%</span>
+              <span id="labelEstimatedShares" class="text-[11px] text-blue-300 block font-normal mt-0.5">約 92.00 股</span>
+            </div>
+            <div class="p-2 rounded bg-emerald-950/40 border border-emerald-900/60">
+              <span class="text-emerald-400 block">10年期美國國債</span>
+              <span id="badgeBondPct" class="text-white text-sm font-bold">30%</span>
+              <span id="labelBondAmt" class="text-[11px] text-emerald-300 block font-normal mt-0.5">HK$ 303,600</span>
+            </div>
+            <div class="p-2 rounded bg-slate-800/40 border border-slate-700/60">
+              <span class="text-slate-300 block">現金 (0% 回報)</span>
+              <span id="badgeCashPct" class="text-amber-400 text-sm font-bold">20%</span>
+              <span id="labelCashAmt" class="text-[11px] text-amber-300 block font-normal mt-0.5">HK$ 202,400</span>
+            </div>
+          </div>
+
+          <!-- 股票滑桿 -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs text-slate-400">
+              <span>調整 VOO 股票權重</span>
+              <span id="sliderStockVal" class="text-blue-400 font-mono">50%</span>
+            </div>
+            <input type="range" id="sliderStock" min="0" max="100" value="50" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <!-- 國債滑桿 -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs text-slate-400">
+              <span>調整債券權重</span>
+              <span id="sliderBondVal" class="text-emerald-400 font-mono">30%</span>
+            </div>
+            <input type="range" id="sliderBond" min="0" max="100" value="30" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <p class="text-[11px] text-slate-500">
+            * 提示：每年可自由以滑桿調整股債權重，無摩擦再平衡；剩餘比例自動歸入現金。
+          </p>
+        </div>
+
+        <button id="btnSubmitDecision" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg shadow-lg shadow-blue-900/30 transition">
+          確認生活支出與資產配置，結算該年成果
+        </button>
+      </div>
+
+      <!-- 階段 3: 模擬終止 / 結算面板 -->
+      <div id="panelGameOver" class="py-6 text-center space-y-4 hidden">
+        <h3 id="gameOverTitle" class="text-2xl font-extrabold text-rose-500">模擬終止</h3>
+        
+        <div class="max-w-lg mx-auto bg-slate-950 border border-slate-800 p-5 rounded-xl text-left space-y-3">
+          <div class="border-b border-slate-800 pb-2.5">
+            <span class="text-xs text-slate-400 block mb-0.5">人生終止原因 / 死因：</span>
+            <p id="finalDeathReason" class="text-sm font-bold text-rose-400 leading-snug">-</p>
+          </div>
+          <div class="flex justify-between text-xs sm:text-sm">
+            <span class="text-slate-400">扮演角色:</span>
+            <span id="finalRoleText" class="text-white font-semibold">-</span>
+          </div>
+          <div class="flex justify-between text-xs sm:text-sm">
+            <span class="text-slate-400">終止年度與年齡:</span>
+            <span id="finalYearAgeText" class="text-white font-semibold">-</span>
+          </div>
+          <div class="flex justify-between text-xs sm:text-sm">
+            <span class="text-slate-400">帳戶內未使用之名義資金:</span>
+            <span id="finalCapitalText" class="text-amber-400 font-bold">HK$ 0</span>
+          </div>
+          <div class="flex justify-between text-xs sm:text-sm">
+            <span class="text-slate-400">折現後實質購買力剩餘:</span>
+            <span id="finalRealCapitalText" class="text-emerald-400 font-bold">HK$ 0</span>
+          </div>
+          <div class="flex justify-between text-xs sm:text-sm border-t border-slate-800/80 pt-2">
+            <span class="text-amber-400 font-bold">終生累積快樂值:</span>
+            <span id="finalHappinessText" class="text-amber-300 font-extrabold text-base">0.0 點</span>
+          </div>
+          <div class="p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-xs text-slate-300 leading-relaxed" id="lifeVerdictText">
+            -
+          </div>
+        </div>
+
+        <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 text-white font-medium px-6 py-2.5 rounded-lg transition">
+          重新開始模擬人生 (重新選角)
+        </button>
+      </div>
+    </section>
+
+    <!-- 決策回測記錄日誌 -->
+    <section id="panelLog" class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 sm:p-5 shadow-xl hidden">
+      <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">年度回測、生活消費與損益流水帳</h3>
+      <div id="logList" class="space-y-2 max-h-56 overflow-y-auto pr-2 text-xs"></div>
+    </section>
+
+    <!-- 底部：過去 50 年歷史基準數據表 (1977 - 2026) -->
+    <section class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 sm:p-5 shadow-xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">過去 50 年歷史基準回報與宏觀指標 (1977 - 2026)</h3>
+        <span class="text-[11px] text-slate-500"></span>
+      </div>
+      <div class="overflow-x-auto max-h-80 overflow-y-auto border border-slate-800 rounded-lg">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-950 text-slate-400 sticky top-0 border-b border-slate-800">
+            <tr>
+              <th class="p-2.5">年份</th>
+              <th class="p-2.5 text-right">S&P 500 回報率</th>
+              <th class="p-2.5 text-right">美國 CPI 通脹率</th>
+              <th class="p-2.5 text-right">10年期美債收益率</th>
+            </tr>
+          </thead>
+          <tbody id="tableHistoryBody" class="divide-y border-slate-800/60 font-mono"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    const rawHistory50 = [
+      { year: 1977, sp: -7.18, cpi: 6.50, bond: 7.78 },
+      { year: 1978, sp: 6.56, cpi: 7.60, bond: 9.15 },
+      { year: 1979, sp: 18.44, cpi: 11.30, bond: 10.33 },
+      { year: 1980, sp: 32.42, cpi: 13.50, bond: 12.43 },
+      { year: 1981, sp: -4.91, cpi: 10.30, bond: 13.98 },
+      { year: 1982, sp: 21.41, cpi: 6.20, bond: 10.79 },
+      { year: 1983, sp: 22.51, cpi: 3.20, bond: 11.82 },
+      { year: 1984, sp: 6.27, cpi: 4.30, bond: 11.55 },
+      { year: 1985, sp: 31.74, cpi: 3.60, bond: 8.99 },
+      { year: 1986, sp: 18.67, cpi: 1.90, bond: 7.23 },
+      { year: 1987, sp: 5.23, cpi: 3.60, bond: 8.83 },
+      { year: 1988, sp: 16.81, cpi: 4.10, bond: 9.14 },
+      { year: 1989, sp: 31.69, cpi: 4.80, bond: 7.93 },
+      { year: 1990, sp: -3.10, cpi: 5.40, bond: 8.08 },
+      { year: 1991, sp: 30.47, cpi: 4.20, bond: 6.71 },
+      { year: 1992, sp: 7.62, cpi: 3.00, bond: 7.00 },
+      { year: 1993, sp: 10.08, cpi: 3.00, bond: 5.83 },
+      { year: 1994, sp: 1.32, cpi: 2.60, bond: 7.84 },
+      { year: 1995, sp: 37.58, cpi: 2.80, bond: 5.58 },
+      { year: 1996, sp: 22.96, cpi: 3.00, bond: 6.43 },
+      { year: 1997, sp: 33.36, cpi: 2.30, bond: 5.75 },
+      { year: 1998, sp: 28.58, cpi: 1.60, bond: 4.65 },
+      { year: 1999, sp: 21.04, cpi: 2.20, bond: 6.45 },
+      { year: 2000, sp: -9.10, cpi: 3.40, bond: 5.12 },
+      { year: 2001, sp: -11.89, cpi: 2.80, bond: 5.07 },
+      { year: 2002, sp: -22.10, cpi: 1.60, bond: 3.83 },
+      { year: 2003, sp: 28.68, cpi: 2.30, bond: 4.27 },
+      { year: 2004, sp: 10.88, cpi: 2.70, bond: 4.24 },
+      { year: 2005, sp: 4.91, cpi: 3.40, bond: 4.39 },
+      { year: 2006, sp: 15.79, cpi: 3.20, bond: 4.71 },
+      { year: 2007, sp: 5.49, cpi: 2.80, bond: 4.04 },
+      { year: 2008, sp: -37.00, cpi: 3.80, bond: 2.25 },
+      { year: 2009, sp: 26.46, cpi: -0.40, bond: 3.85 },
+      { year: 2010, sp: 15.06, cpi: 1.60, bond: 3.30 },
+      { year: 2011, sp: 2.11, cpi: 3.06, bond: 1.88 },
+      { year: 2012, sp: 16.00, cpi: 1.76, bond: 1.76 },
+      { year: 2013, sp: 32.39, cpi: 1.51, bond: 3.04 },
+      { year: 2014, sp: 13.69, cpi: 0.65, bond: 2.17 },
+      { year: 2015, sp: 1.38, cpi: 0.64, bond: 2.27 },
+      { year: 2016, sp: 11.96, cpi: 2.05, bond: 2.45 },
+      { year: 2017, sp: 21.83, cpi: 2.13, bond: 2.41 },
+      { year: 2018, sp: -4.38, cpi: 2.00, bond: 2.69 },
+      { year: 2019, sp: 31.49, cpi: 2.32, bond: 1.92 },
+      { year: 2020, sp: 18.40, cpi: 1.32, bond: 0.93 },
+      { year: 2021, sp: 28.71, cpi: 7.17, bond: 1.51 },
+      { year: 2022, sp: -18.11, cpi: 6.40, bond: 3.88 },
+      { year: 2023, sp: 26.29, cpi: 3.32, bond: 3.88 },
+      { year: 2024, sp: 25.02, cpi: 2.87, bond: 4.58 },
+      { year: 2025, sp: 16.89, cpi: 2.65, bond: 4.03 },
+      { year: 2026, sp: 14.20, cpi: 2.90, bond: 4.15 }
+    ];
+
+    const accidentalDeathReasons = [
+      "深夜獨自加班時心律不整引發心源性猝死",
+      "在瑞士阿爾卑斯山度假滑雪時突遇罕見雪崩",
+      "橫過中環十字路口時遭失控雙層巴士撞擊身亡",
+      "搭乘商務客機跨洋飛行時遭遇不可抗力之晴空亂流墜海",
+      "進食高檔澳洲黑松露生蠔時引發急性過敏性休克窒息",
+      "清晨晨跑時突遭失控電動超跑越線逆行猛烈撞擊",
+      "於私家遊艇出海垂釣時失足跌入深海暗流溺斃",
+      "自家豪宅浴室因水管漏電導致觸電身亡",
+      "巡視旗下投資廠房時突遭吊臂高空墜物擊中頭部",
+      "攀登南美安第斯山脈挑戰高峰時突發急性高山腦水腫"
+    ];
+
+    let fullHistory = [...rawHistory50];
+    let selectedRoleId = 'normal';
+    let currentRoleName = "普通人";
+    let startAge = 28;
+    let currentAge = 28;
+    let currentYear = 2027;
+    let simulationRound = 1;
+    let initialCapital = 1000000;
+    let currentCapital = 1000000;
+    let baseSalary = 72000;
+    let returnPenalty = 0.0;
+    let vooPrice = 5500.0;
+    let vooShares = 0.0;
+    let totalHappiness = 0.0;
+    let cumulativeInflationFactor = 1.0;
+    let hasLateCareerCrashOccurred = false;
+
+    // 退休剛性支出追蹤變數
+    let lastSalaryAt65 = 0;
+    let currentMandatoryExpense = 0;
+
+    const cardRoleNormal = document.getElementById('cardRoleNormal');
+    const cardRoleSam = document.getElementById('cardRoleSam');
+    const cardRoleZero3 = document.getElementById('cardRoleZero3');
+    const badgeActiveRole = document.getElementById('badgeActiveRole');
+    const roleIndicatorTag = document.getElementById('roleIndicatorTag');
+
+    const btnStart = document.getElementById('btnStart');
+    const panelAgeSetup = document.getElementById('panelAgeSetup');
+    const panelSimulate = document.getElementById('panelSimulate');
+    const panelGameOver = document.getElementById('panelGameOver');
+    const panelLog = document.getElementById('panelLog');
+    const logList = document.getElementById('logList');
+
+    const cashflowLabel = document.getElementById('cashflowLabel');
+    const retirementExpenseBanner = document.getElementById('retirementExpenseBanner');
+    const bannerMandatoryAmt = document.getElementById('bannerMandatoryAmt');
+
+    const inputSpend = document.getElementById('inputSpend');
+    const labelAddHappiness = document.getElementById('labelAddHappiness');
+    const rateCostNotice = document.getElementById('rateCostNotice');
+    const spendError = document.getElementById('spendError');
+    const investableCapitalDisplay = document.getElementById('investableCapitalDisplay');
+
+    const sliderStock = document.getElementById('sliderStock');
+    const sliderBond = document.getElementById('sliderBond');
+    const sliderStockVal = document.getElementById('sliderStockVal');
+    const sliderBondVal = document.getElementById('sliderBondVal');
+    const badgeStockPct = document.getElementById('badgeStockPct');
+    const badgeBondPct = document.getElementById('badgeBondPct');
+    const badgeCashPct = document.getElementById('badgeCashPct');
+    const labelEstimatedShares = document.getElementById('labelEstimatedShares');
+    const labelBondAmt = document.getElementById('labelBondAmt');
+    const labelCashAmt = document.getElementById('labelCashAmt');
+    const btnSubmitDecision = document.getElementById('btnSubmitDecision');
+
+    const headerRoundInfo = document.getElementById('headerRoundInfo');
+    const currentYearDisplay = document.getElementById('currentYearDisplay');
+    const currentAgeDisplay = document.getElementById('currentAgeDisplay');
+    const annualSalaryDisplay = document.getElementById('annualSalaryDisplay');
+    const roundCapitalDisplay = document.getElementById('roundCapitalDisplay');
+
+    const metricCapital = document.getElementById('metricCapital');
+    const metricVooPrice = document.getElementById('metricVooPrice');
+    const metricVooShares = document.getElementById('metricVooShares');
+    const metricHappiness = document.getElementById('metricHappiness');
+    const metricNominalPnL = document.getElementById('metricNominalPnL');
+    const metricRealPnL = document.getElementById('metricRealPnL');
+    const metricRolling50 = document.getElementById('metricRolling50');
+    const metricYearCpi = document.getElementById('metricYearCpi');
+    const metricYearYield = document.getElementById('metricYearYield');
+    const tableHistoryBody = document.getElementById('tableHistoryBody');
+
+    function selectRole(roleId) {
+      selectedRoleId = roleId;
+      cardRoleNormal.classList.remove('selected');
+      cardRoleSam.classList.remove('selected');
+      cardRoleZero3.classList.remove('selected');
+
+      if (roleId === 'normal') {
+        cardRoleNormal.classList.add('selected');
+      } else if (roleId === 'sam') {
+        cardRoleSam.classList.add('selected');
+      } else if (roleId === 'zero3') {
+        cardRoleZero3.classList.add('selected');
+      }
+    }
+
+    function getAnnualSalary(age, round) {
+      if (age > 65) return 0;
+      return Math.round(baseSalary * Math.pow(1.02, round - 1));
+    }
+
+    function getNetAvailableCapitalAtStartOfYear() {
+      const salary = getAnnualSalary(currentAge, simulationRound);
+      if (currentAge <= 65) {
+        return currentCapital + salary;
+      } else {
+        return Math.max(0, currentCapital - currentMandatoryExpense);
+      }
+    }
+
+    function getCostPerHappinessPoint(age) {
+      if (age < 40) return 30000;
+      if (age < 55) return 100000;
+      if (age < 65) return 180000;
+      return 250000;
+    }
+
+    function calcRolling50Avg(dataset) {
+      const last50 = dataset.slice(-50);
+      const sum = last50.reduce((acc, cur) => acc + cur.sp, 0);
+      return sum / last50.length;
+    }
+
+    function fmtHKD(num) {
+      return 'HK$ ' + Math.max(0, Math.round(num)).toLocaleString('en-US');
+    }
+
+    function renderHistoryTable() {
+      tableHistoryBody.innerHTML = '';
+      [...fullHistory].reverse().forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition";
+        const spColor = row.sp >= 0 ? 'text-emerald-400' : 'text-rose-400';
+        tr.innerHTML = `
+          <td class="p-2.5 font-semibold text-white">${row.year}</td>
+          <td class="p-2.5 text-right ${spColor}">${row.sp > 0 ? '+' : ''}${row.sp.toFixed(2)}%</td>
+          <td class="p-2.5 text-right text-slate-300">${row.cpi.toFixed(2)}%</td>
+          <td class="p-2.5 text-right text-slate-300">${row.bond.toFixed(2)}%</td>
+        `;
+        tableHistoryBody.appendChild(tr);
+      });
+    }
+
+    metricRolling50.textContent = calcRolling50Avg(fullHistory).toFixed(2) + '%';
+    renderHistoryTable();
+
+    function syncAssetSliders(changed) {
+      let s = parseInt(sliderStock.value, 10);
+      let b = parseInt(sliderBond.value, 10);
+
+      if (changed === 'stock') {
+        if (s + b > 100) {
+          b = 100 - s;
+          sliderBond.value = b;
+        }
+      } else if (changed === 'bond') {
+        if (s + b > 100) {
+          s = 100 - b;
+          sliderStock.value = s;
+        }
+      }
+
+      const c = 100 - (s + b);
+
+      sliderStockVal.textContent = s + '%';
+      sliderBondVal.textContent = b + '%';
+      badgeStockPct.textContent = s + '%';
+      badgeBondPct.textContent = b + '%';
+      badgeCashPct.textContent = c + '%';
+
+      updateDynamicDistribution();
+    }
+
+    sliderStock.addEventListener('input', () => syncAssetSliders('stock'));
+    sliderBond.addEventListener('input', () => syncAssetSliders('bond'));
+
+    function updateDynamicDistribution() {
+      const spend = parseFloat(inputSpend.value) || 0;
+      const totalAvailable = getNetAvailableCapitalAtStartOfYear();
+      const remainder = Math.max(0, totalAvailable - spend);
+
+      const s = parseInt(sliderStock.value, 10) / 100;
+      const b = parseInt(sliderBond.value, 10) / 100;
+      const c = (100 - parseInt(sliderStock.value, 10) - parseInt(sliderBond.value, 10)) / 100;
+
+      const stockAmt = remainder * s;
+      const estShares = stockAmt / vooPrice;
+
+      labelEstimatedShares.textContent = `約 ${estShares.toFixed(2)} 股`;
+      labelBondAmt.textContent = fmtHKD(remainder * b);
+      labelCashAmt.textContent = fmtHKD(remainder * c);
+    }
+
+    inputSpend.addEventListener('input', () => {
+      const spend = parseFloat(inputSpend.value) || 0;
+      const totalAvailable = getNetAvailableCapitalAtStartOfYear();
+      const costPerPoint = getCostPerHappinessPoint(currentAge);
+      
+      if (spend < 0 || spend > totalAvailable) {
+        spendError.classList.remove('hidden');
+        labelAddHappiness.textContent = "+0.0 點";
+        investableCapitalDisplay.textContent = "無效金額";
+      } else {
+        spendError.classList.add('hidden');
+        let pts = spend / costPerPoint;
+        if (pts > 5.0) pts = 5.0;
+        labelAddHappiness.textContent = `+${pts.toFixed(1)} 點${(spend / costPerPoint) > 5.0 ? ' (已達上限)' : ''}`;
+        const remainder = totalAvailable - spend;
+        investableCapitalDisplay.textContent = fmtHKD(remainder);
+        updateDynamicDistribution();
+      }
+    });
+
+    btnStart.addEventListener('click', () => {
+      if (selectedRoleId === 'normal') {
+        currentRoleName = "普通人";
+        startAge = 28;
+        currentAge = 28;
+        initialCapital = 1000000;
+        currentCapital = 1000000;
+        baseSalary = 72000;
+        returnPenalty = 0.0;
+        badgeActiveRole.textContent = "角色：普通人";
+        badgeActiveRole.className = "text-[11px] font-bold text-blue-300 bg-blue-950/80 border border-blue-800 px-2 py-0.5 rounded";
+        roleIndicatorTag.textContent = "普通人";
+        roleIndicatorTag.className = "text-[11px] font-bold px-2 py-0.5 rounded bg-blue-950 border border-blue-800 text-blue-300";
+      } else if (selectedRoleId === 'sam') {
+        currentRoleName = "性病Sam";
+        startAge = 30;
+        currentAge = 30;
+        initialCapital = 2000000;
+        currentCapital = 2000000;
+        baseSalary = 36000;
+        returnPenalty = 0.0;
+        badgeActiveRole.textContent = "角色：性病Sam";
+        badgeActiveRole.className = "text-[11px] font-bold text-rose-300 bg-rose-950/80 border border-rose-800 px-2 py-0.5 rounded";
+        roleIndicatorTag.textContent = "性病Sam (30歲保安)";
+        roleIndicatorTag.className = "text-[11px] font-bold px-2 py-0.5 rounded bg-rose-950 border border-rose-800 text-rose-300";
+      } else if (selectedRoleId === 'zero3') {
+        currentRoleName = "Zero3";
+        startAge = 28;
+        currentAge = 28;
+        initialCapital = 1000000;
+        currentCapital = 1000000;
+        baseSalary = 86400; // 校準：儲蓄 +20% (HK$ 86,400)
+        returnPenalty = 2.8; // 校準：強制扣減 2.8% 回報，徹底封死 90 點門檻
+        badgeActiveRole.textContent = "角色：Zero3 (-2.8%回報)";
+        badgeActiveRole.className = "text-[11px] font-bold text-purple-300 bg-purple-950/80 border border-purple-800 px-2 py-0.5 rounded";
+        roleIndicatorTag.textContent = "Zero3 (AA狗截圖員)";
+        roleIndicatorTag.className = "text-[11px] font-bold px-2 py-0.5 rounded bg-purple-950 border border-purple-800 text-purple-300";
+      }
+
+      metricCapital.textContent = fmtHKD(currentCapital);
+
+      panelAgeSetup.classList.add('hidden');
+      panelSimulate.classList.remove('hidden');
+      panelLog.classList.remove('hidden');
+
+      updateRoundHeader();
+    });
+
+    function updateRoundHeader() {
+      const salary = getAnnualSalary(currentAge, simulationRound);
+      if (currentAge <= 65) {
+        lastSalaryAt65 = salary;
+        currentMandatoryExpense = 0;
+        retirementExpenseBanner.classList.add('hidden');
+        cashflowLabel.textContent = "當年工作薪資注入";
+        annualSalaryDisplay.textContent = `+${fmtHKD(salary)}`;
+        annualSalaryDisplay.className = "text-xs font-bold text-emerald-400 font-mono";
+      } else {
+        if (currentAge === 66) {
+          currentMandatoryExpense = Math.round(lastSalaryAt65 * 0.40);
+        } else {
+          currentMandatoryExpense = Math.round(currentMandatoryExpense * 1.03);
+        }
+        retirementExpenseBanner.classList.remove('hidden');
+        bannerMandatoryAmt.textContent = fmtHKD(currentMandatoryExpense);
+        cashflowLabel.textContent = "當年剛性養老支出 (40%+3%/年)";
+        annualSalaryDisplay.textContent = `-${fmtHKD(currentMandatoryExpense)}`;
+        annualSalaryDisplay.className = "text-xs font-bold text-rose-400 font-mono";
+      }
+
+      const totalAvailable = getNetAvailableCapitalAtStartOfYear();
+
+      headerRoundInfo.textContent = `年度: ${currentYear} | 年齡: ${currentAge} 歲`;
+      currentYearDisplay.textContent = `${currentYear} 年度人生與資產決策`;
+      currentAgeDisplay.textContent = `當前年齡: ${currentAge} 歲 | 模擬第 ${simulationRound} 年`;
+
+      roundCapitalDisplay.textContent = fmtHKD(totalAvailable);
+
+      const costPerPoint = getCostPerHappinessPoint(currentAge);
+      rateCostNotice.textContent = `目前每投入 ${fmtHKD(costPerPoint)} 換取 1 點快樂 (每年上限 5 點)`;
+
+      let defaultSpend = Math.min(costPerPoint * 3, Math.floor(totalAvailable * 0.12));
+      if (currentAge > 65) {
+        defaultSpend = Math.min(costPerPoint * 1, Math.floor(totalAvailable * 0.04));
+      }
+      if (totalAvailable < defaultSpend) defaultSpend = 0;
+      inputSpend.value = defaultSpend;
+      inputSpend.max = totalAvailable;
+
+      let pts = defaultSpend / costPerPoint;
+      if (pts > 5.0) pts = 5.0;
+      labelAddHappiness.textContent = `+${pts.toFixed(1)} 點`;
+      investableCapitalDisplay.textContent = fmtHKD(totalAvailable - defaultSpend);
+      
+      metricVooPrice.textContent = fmtHKD(vooPrice);
+      syncAssetSliders('stock');
+    }
+
+    btnSubmitDecision.addEventListener('click', () => {
+      const salary = getAnnualSalary(currentAge, simulationRound);
+
+      if (currentAge > 65 && currentCapital - currentMandatoryExpense <= 2000) {
+        const realCap = Math.max(0, currentCapital - currentMandatoryExpense) / cumulativeInflationFactor;
+        triggerEnd("資產耗盡破產", `年滿 ${currentAge} 歲時，無力負擔當年剛性醫療與生活開支 (${fmtHKD(currentMandatoryExpense)})，宣告老後破產終止。`, currentYear, currentAge, 0, realCap);
+        return;
+      }
+
+      const totalAvailable = getNetAvailableCapitalAtStartOfYear();
+      const spend = parseFloat(inputSpend.value) || 0;
+
+      if (spend < 0 || spend > totalAvailable) {
+        spendError.classList.remove('hidden');
+        return;
+      }
+      spendError.classList.add('hidden');
+
+      const costPerPoint = getCostPerHappinessPoint(currentAge);
+      let earnedHappiness = spend / costPerPoint;
+      if (earnedHappiness > 5.0) earnedHappiness = 5.0;
+      earnedHappiness = +earnedHappiness.toFixed(2);
+      totalHappiness = +(totalHappiness + earnedHappiness).toFixed(1);
+
+      const investableCapital = totalAvailable - spend;
+
+      const stockPct = parseInt(sliderStock.value, 10) / 100;
+      const bondPct = parseInt(sliderBond.value, 10) / 100;
+      const cashPct = (100 - parseInt(sliderStock.value, 10) - parseInt(sliderBond.value, 10)) / 100;
+
+      const stockCapital = investableCapital * stockPct;
+      vooShares = stockCapital / vooPrice;
+
+      let spReturn = 0;
+      let cpiRate = 0;
+      let bondYield = 0;
+
+      // 校準：55歲以上且資產>=200萬，只要股票配置 >= 60%（封殺無腦靜態60/40）即觸發退休前股災與低迷期
+      const isLateCareerHeavyStock = (currentAge >= 55 && totalAvailable >= 2000000 && stockPct >= 0.60);
+
+      if (isLateCareerHeavyStock) {
+        bondYield = +(Math.random() * 2.2 + 6.0).toFixed(2);
+        cpiRate = +(Math.random() * 0.5 + 1.0).toFixed(2);
+
+        const yearsRemainingInBracket = Math.max(1, 65 - currentAge);
+        const triggerCrashNow = !hasLateCareerCrashOccurred && (Math.random() < (1.0 / yearsRemainingInBracket) || currentAge === 65);
+
+        if (triggerCrashNow) {
+          // 退休前股災臨界值：-28% 至 -33%
+          spReturn = -(Math.random() * 5.0 + 28.0).toFixed(2);
+          hasLateCareerCrashOccurred = true;
+        } else {
+          const dropPool = [-9.64, -5.21, -3.88, 1.15, -7.32, 2.04, -4.12];
+          spReturn = dropPool[Math.floor(Math.random() * dropPool.length)];
+        }
+      } else {
+        if (bondPct < 0.30) {
+          bondYield = Math.random() < 0.80 ? +(Math.random() * 1.6 + 7.0).toFixed(2) : +(Math.random() * 4.0 + 2.0).toFixed(2);
+        } else {
+          bondYield = +(Math.random() * 4.0 + 2.0).toFixed(2);
+        }
+
+        const isInflationAboveBond = Math.random() < 0.40;
+        if (isInflationAboveBond) {
+          const minCpi = Math.min(8.2, bondYield + 0.3);
+          cpiRate = +(Math.random() * (8.5 - minCpi) + minCpi).toFixed(2);
+        } else {
+          const maxCpi = Math.max(1.2, bondYield);
+          cpiRate = +(Math.random() * (maxCpi - 1.0) + 1.0).toFixed(2);
+        }
+
+        if (stockPct < 0.30) {
+          if (Math.random() < 0.85) {
+            const highSp = [39.56, 34.78, 28.34, 36.12, 32.45, 38.90, 31.25, 35.60];
+            spReturn = highSp[Math.floor(Math.random() * highSp.length)];
+          } else {
+            spReturn = +(Math.random() * 6.0 + 18.0).toFixed(2);
+          }
+        } else {
+          const roll = Math.random();
+          if (roll < 0.15) {
+            spReturn = -(Math.random() * 20.0 + 15.0).toFixed(2);
+          } else if (roll < 0.85) {
+            spReturn = +(Math.random() * 30.0 - 10.0).toFixed(2);
+          } else {
+            spReturn = +(Math.random() * 20.0 + 20.0).toFixed(2);
+          }
+        }
+      }
+
+      // 50 年滾動平均底線 7.50%
+      const testHistory = [...fullHistory, { year: currentYear, sp: spReturn, cpi: cpiRate, bond: bondYield }];
+      let projected50Avg = calcRolling50Avg(testHistory);
+
+      if (projected50Avg < 7.50) {
+        const last49 = testHistory.slice(-50, -1);
+        const sum49 = last49.reduce((a, b) => a + b.sp, 0);
+        spReturn = +( (7.50 * 50) - sum49 ).toFixed(2);
+      }
+
+      fullHistory.push({
+        year: currentYear,
+        sp: spReturn,
+        cpi: cpiRate,
+        bond: bondYield
+      });
+
+      let effectiveSpReturn = spReturn;
+      let effectiveBondYield = bondYield;
+      if (returnPenalty > 0) {
+        effectiveSpReturn = +(spReturn - returnPenalty).toFixed(2);
+        effectiveBondYield = +(bondYield - returnPenalty).toFixed(2);
+      }
+
+      vooPrice = +(vooPrice * (1 + effectiveSpReturn / 100)).toFixed(2);
+
+      const endStockVal = vooShares * vooPrice;
+      const endBondVal = (investableCapital * bondPct) * (1 + effectiveBondYield / 100);
+      const endCashVal = investableCapital * cashPct;
+
+      currentCapital = endStockVal + endBondVal + endCashVal;
+
+      let samMedicalEvent = false;
+      if (selectedRoleId === 'sam') {
+        if (Math.random() < 0.50) {
+          samMedicalEvent = true;
+          currentCapital = Math.max(0, currentCapital - 18000);
+        }
+      }
+
+      cumulativeInflationFactor *= (1 + (cpiRate / 100));
+
+      const realCapital = currentCapital / cumulativeInflationFactor;
+      const nominalPnL = currentCapital - initialCapital;
+      const nominalPnLPct = (nominalPnL / initialCapital) * 100;
+      const realPnL = realCapital - initialCapital;
+      const realPnLPct = (realPnL / initialCapital) * 100;
+
+      const updatedRolling50 = calcRolling50Avg(fullHistory);
+
+      metricCapital.textContent = fmtHKD(currentCapital);
+      metricVooPrice.textContent = fmtHKD(vooPrice);
+      metricVooShares.textContent = `${vooShares.toFixed(2)} 股`;
+      metricHappiness.textContent = `${totalHappiness.toFixed(1)} 點`;
+      
+      metricNominalPnL.textContent = `${nominalPnL >= 0 ? '+' : ''}${fmtHKD(nominalPnL)} (${nominalPnLPct >= 0 ? '+' : ''}${nominalPnLPct.toFixed(1)}%)`;
+      metricNominalPnL.className = `text-xs sm:text-sm font-bold mt-1 ${nominalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+      metricRealPnL.textContent = `${realPnL >= 0 ? '+' : ''}${fmtHKD(realPnL)} (${realPnLPct >= 0 ? '+' : ''}${realPnLPct.toFixed(1)}%)`;
+      metricRealPnL.className = `text-xs sm:text-sm font-bold mt-1 ${realPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+      metricRolling50.textContent = updatedRolling50.toFixed(2) + '%';
+      metricYearCpi.textContent = `${cpiRate.toFixed(1)}%`;
+      metricYearYield.textContent = `${bondYield.toFixed(1)}%`;
+
+      addLogEntry(currentYear, currentAge, salary, currentMandatoryExpense, spend, earnedHappiness, vooShares, vooPrice, effectiveSpReturn, effectiveBondYield, currentCapital, realCapital, samMedicalEvent);
+      renderHistoryTable();
+
+      if (currentCapital <= 2000) {
+        triggerEnd("資產耗盡破產", "投資組合已不足以維持基本運作與年老開支，宣告破產終止。", currentYear, currentAge, currentCapital, realCapital);
+        return;
+      }
+
+      if (currentAge >= 59) {
+        if (stockPct >= 0.50 && realPnL > 0) {
+          if (Math.random() < 0.30) {
+            const randomReason = accidentalDeathReasons[Math.floor(Math.random() * accidentalDeathReasons.length)];
+            triggerEnd("突發重大意外身故", randomReason, currentYear, currentAge, currentCapital, realCapital);
+            return;
+          }
+        }
+      }
+
+      if (currentAge >= 99) {
+        triggerEnd("壽終正寢（自然終老）", "您已達到 99 歲人生極限，在經歷了數十載的風雨起伏後安詳離世。", currentYear, currentAge, currentCapital, realCapital);
+        return;
+      }
+
+      currentYear++;
+      currentAge++;
+      simulationRound++;
+      updateRoundHeader();
+    });
+
+    function addLogEntry(yr, age, sal, mandExp, spd, pts, shs, prc, spRet, bRet, cap, rCap, samMedical) {
+      const item = document.createElement('div');
+      item.className = "bg-slate-950/70 border border-slate-800 p-2.5 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1.5";
+      
+      let extraTag = "";
+      if (samMedical) {
+        extraTag += `<span class="text-rose-400 bg-rose-950/80 px-1.5 py-0.5 rounded text-[10px] border border-rose-800">叫雞中招 扣18k</span> `;
+      }
+      if (returnPenalty > 0) {
+        extraTag += `<span class="text-purple-400 bg-purple-950/80 px-1.5 py-0.5 rounded text-[10px] border border-purple-800">回報-${returnPenalty}%</span>`;
+      }
+
+      const cashflowBadge = age <= 65
+        ? `<span class="text-emerald-400">薪資:+${fmtHKD(sal)}</span>`
+        : `<span class="text-rose-400">剛性養老:-${fmtHKD(mandExp)}</span>`;
+
+      item.innerHTML = `
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-bold text-white">${yr}年 (${age}歲)</span>
+          ${cashflowBadge}
+          <span class="text-amber-400">自願消費:${fmtHKD(spd)}(+${pts}點)</span>
+          ${extraTag}
+        </div>
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <span>VOO:<strong>${fmtHKD(prc)}</strong> (${shs.toFixed(1)}股)</span>
+          <span>股:<strong class="${spRet>=0?'text-emerald-400':'text-rose-400'}">${spRet>0?'+':''}${spRet.toFixed(1)}%</strong></span>
+          <span>債:<strong class="${bRet>=0?'text-emerald-400':'text-rose-400'}">${bRet>0?'+':''}${bRet.toFixed(1)}%</strong></span>
+          <span class="text-slate-300">結餘:<strong>${fmtHKD(cap)}</strong></span>
+        </div>
+      `;
+      logList.prepend(item);
+    }
+
+    function triggerEnd(type, reasonText, yr, age, cap, rCap) {
+      panelSimulate.classList.add('hidden');
+      panelGameOver.classList.remove('hidden');
+
+      document.getElementById('gameOverTitle').textContent = `模擬終止 — ${type}`;
+      document.getElementById('finalDeathReason').textContent = reasonText;
+      document.getElementById('finalRoleText').textContent = currentRoleName;
+      document.getElementById('finalYearAgeText').textContent = `${yr} 年度 (享年 ${age} 歲)`;
+      document.getElementById('finalCapitalText').textContent = fmtHKD(cap);
+      document.getElementById('finalRealCapitalText').textContent = fmtHKD(rCap);
+      document.getElementById('finalHappinessText').textContent = `${totalHappiness.toFixed(1)} 點`;
+
+      let verdict = "";
+      if (totalHappiness < 30.0) {
+        verdict = "【階級 1：守財奴悲歌】您一生極端節儉或貪婪屯積，將全副心思放在帳面數字上。雖然身故時留有資產，但完全錯過了青春與世界體驗，留下的唯有冷冰冰的數字遺憾。";
+      } else if (totalHappiness < 60.0) {
+        verdict = "【階級 2：謹慎的苦行者】您在財富保全與生活體驗之間高度克制，淺嚐人生即止。您小心翼翼地規避市場風險，但對生活開支依然過度保守，未能發揮金錢的時間價值。";
+      } else if (totalHappiness < 90.0) {
+        verdict = "【階級 3：務實的生活家】您成功在市場不確定性與個人生活享受之間維持了平穩。這是常規靜態資產配置（如全買股票、全買債券、全程死抱 60/40，或特殊缺陷角色）所能達到的務實上限，生活安穩但也留有些許未竟之憾。";
+      } else if (totalHappiness < 100.0) {
+        verdict = "【階級 4：豁達的人生旅人】您具備高超財務意識，懂得在青春期把握高性價比體驗，並在中晚年主動調倉應對養老開支，人生旅途精彩紛呈！";
+      } else {
+        verdict = "【階級 5：活在當下的智者】您達到了金錢與生命的極致和解！您完全參透了「青年進攻、中年降倉避險、晚年從容應對剛性養老並精準清零」的終極法則，精準規避所有週期與死神陷阱，成就了無比圓滿的一生！";
+      }
+      document.getElementById('lifeVerdictText').textContent = verdict;
+    }
+  </script>
+</body>
+</html>
